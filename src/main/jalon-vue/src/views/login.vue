@@ -74,6 +74,8 @@
                 this.loading = false;
                 let code = response.data.status;
                 if (code == 200) {
+                  this.$store.commit("SET_USERNAME", "username")
+                  this.$store.commit("SET_TOKEN", "token")
                   this.$router.push({
                     path: "/success",
                     query: {data: response.data.msg}

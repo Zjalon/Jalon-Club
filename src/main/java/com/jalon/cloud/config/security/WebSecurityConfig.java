@@ -1,5 +1,6 @@
 package com.jalon.cloud.config.security;
 
+import com.jalon.cloud.config.filter.TokenAuthFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +12,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +37,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private CustomerUserService customerUserService;
 
+    @Autowired
+    private TokenAuthFilter tokenAuthFilter;
+
     /**
      * WebSecurity 全局请求忽略规则配置
      *
@@ -45,51 +51,68 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         logger.info("WebSecurity忽略规则配置完成");
     }
 
-    /**
-     * WebSecurity 认证配置
-     *
-     * @param http
-     * @throws Exception
-     */
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
         http
-                .exceptionHandling().authenticationEntryPoint(new ExceptionEntryPoint())
-                .and()
-                // 允许跨域
+                // 允许跨域设置
                 .cors()
-                // 关闭csrf验证
+                // 关闭csrf认证
                 .and().csrf().disable()
-                .authorizeRequests()
-                // 下面这一行是不需要验证路径
-                .antMatchers("/", "/index", "/login").permitAll()
-                // 其他都需要认证
-                .anyRequest().authenticated()
-                .and()
-                // 设置登录相关
-                .formLogin()
-                // 当需要用户登录时,会跳转到下面页面
-                .loginPage("/index")
-                // 登录成功处理
-                .successHandler(new AjaxAuthSuccessHandler())
-                // 登录失败处理
-                .failureHandler(new AjaxAuthFailureHandler())
-                // 指定登录请求
-                .loginProcessingUrl("/login")
-                .permitAll()
-                .and()
-                // 退出时,销毁session,然后跳转页面
-                .logout()
-                .logoutSuccessHandler(new AjaxLogoutSuccessHandler())
-                .logoutUrl("/logout")
-                .and()
-                // session管理,同时只能用一个用户登录,强制踢出前一个用户并跳转到/login?expired
-                .sessionManagement()
-                .maximumSessions(1)
-                .expiredUrl("/login?expired");
-        logger.info("WebSecurity认证规则配置完成");
+                // 关闭session
+                // ALWAYS,总是创建HttpSession
+                // NEVER,Spring Security不会创建HttpSession，但如果它已经存在，将可以使用HttpSession
+                // IF_REQUIRED,Spring Security只会在需要时创建一个HttpSession
+                // STATELESS,Spring Security永远不会创建HttpSession，它不会使用HttpSession来获取SecurityContext
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().authorizeRequests()
+                // 不需要认证的请求
+                .antMatchers("").permitAll()
+                .and().addFilterBefore(tokenAuthFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
+    /**
+     * WebSecurity 认证配置--form表单提交方式
+     *
+     * @throws Exception
+     */
+//    @Override
+//    protected void configure(final HttpSecurity http) throws Exception {
+//        http
+//                .exceptionHandling().authenticationEntryPoint(new ExceptionEntryPoint())
+//                .and()
+//                // 允许跨域
+//                .cors()
+//                // 关闭csrf验证
+//                .and().csrf().disable()
+//                .authorizeRequests()
+//                // 下面这一行是不需要验证路径
+//                .antMatchers("/", "/index", "/login").permitAll()
+//                // 其他都需要认证
+//                .anyRequest().authenticated()
+//                .and()
+//                // 设置登录相关
+//                .formLogin()
+//                // 当需要用户登录时,会跳转到下面页面
+//                .loginPage("/index")
+//                // 登录成功处理
+//                .successHandler(new AjaxAuthSuccessHandler())
+//                // 登录失败处理
+//                .failureHandler(new AjaxAuthFailureHandler())
+//                // 指定登录请求
+//                .loginProcessingUrl("/login")
+//                .permitAll()
+//                .and()
+//                // 退出时,销毁session,然后跳转页面
+//                .logout()
+//                .logoutSuccessHandler(new AjaxLogoutSuccessHandler())
+//                .logoutUrl("/logout")
+//                .and()
+//                // session管理,同时只能用一个用户登录,强制踢出前一个用户并跳转到/login?expired
+//                .sessionManagement()
+//                .maximumSessions(1)
+//                .expiredUrl("/login?expired");
+//        logger.info("WebSecurity认证规则配置完成");
+//    }
     @Override
     protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
         auth.inMemoryAuthentication().withUser("user").password("123456").roles("USER");

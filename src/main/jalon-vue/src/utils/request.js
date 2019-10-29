@@ -1,4 +1,5 @@
 import axios from 'axios'
+import store from '@/store'
 
 var root = process.env.API_ROOT;
 
@@ -11,6 +12,9 @@ const service = axios.create({
 service.interceptors.request.use((config) => {
   //请求之前重新拼装url
   config.url = root + config.url;
+  // 每个请求拼接token
+  const token = store.state.user.token;
+  token && (config.headers.common['token'] = token);
   return config;
 });
 export default service
