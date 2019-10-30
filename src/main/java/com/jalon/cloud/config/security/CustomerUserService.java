@@ -15,7 +15,8 @@ public class CustomerUserService implements UserDetailsService {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername(username);
         userDTO.setPassword("$2a$10$qyuSBd1zUk/V20f1WyH5BOL8xH6x7zQZN3IzwgtS3A6.ettf.fCTy");
-        if (userDTO == null) {
+        //TODO 没有数据库暂时用户密码写死,admin|123456
+        if (!username.equals("admin")) {
             throw new UsernameNotFoundException("Username :" + username + "not found");
         }
         return new SecurityUser(userDTO);

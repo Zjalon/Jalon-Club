@@ -29,6 +29,13 @@
           >
           </el-input>
         </el-form-item>
+        <el-form-item :hidden="data.flag">
+          <el-alert
+            :title="data.msg"
+            type="error"
+            :closable="false"
+          ></el-alert>
+        </el-form-item>
         <el-form-item style="margin-bottom: 60px">
           <el-button
             style="width: 100%"
@@ -54,6 +61,10 @@
         },
         loading: false,
         pwdType: "password",
+        data: {
+          msg: "",
+          flag: true
+        }
       };
     },
     methods: {
@@ -70,14 +81,12 @@
                   this.$store.commit("SET_USERNAME", data.username);
                   this.$store.commit("SET_TOKEN", data.token);
                   this.$router.push({
-                    path: "/success",
+                    path: "/",
                     query: {data: data.backMsg}
                   });
                 } else {
-                  this.$router.push({
-                    path: "/error",
-                    query: {message: data.backMsg}
-                  });
+                  this.data.msg = data.backMsg;
+                  this.data.flag = false;
                 }
               })
               .catch(() => {

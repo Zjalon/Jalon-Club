@@ -45,8 +45,7 @@ public class LoginService {
             dto.setBackMsg("登录成功");
         } catch (Exception e) {
             dto.setBackCode("401");
-            dto.setBackMsg(String.valueOf(e));
-            return new ResponseEntity(dto, HttpStatus.INTERNAL_SERVER_ERROR);
+            dto.setBackMsg(String.valueOf(e.getMessage()));
         }
 
         return ResponseEntity.ok(dto);
