@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -35,9 +36,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private final Log logger = LogFactory.getLog(WebSecurityConfig.class);
 
     @Autowired
-    private CustomerUserService customerUserService;
-
-    @Autowired
     private TokenAuthFilter tokenAuthFilter;
 
     /**
@@ -49,6 +47,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(final WebSecurity web) {
         web.ignoring().antMatchers("/static/**");
         logger.info("WebSecurity忽略规则配置完成");
+    }
+
+    @Bean
+    @Override
+    protected AuthenticationManager authenticationManager() throws Exception {
+        return super.authenticationManager();
     }
 
     @Override
@@ -66,7 +70,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and().authorizeRequests()
                 // 不需要认证的请求
-                .antMatchers("").permitAll()
+                .antMatchers("/auth/**").permitAll()
                 .and().addFilterBefore(tokenAuthFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
@@ -113,12 +117,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //                .expiredUrl("/login?expired");
 //        logger.info("WebSecurity认证规则配置完成");
 //    }
-    @Override
-    protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication().withUser("user").password("123456").roles("USER");
-        auth.userDetailsService(customerUserService).passwordEncoder(passwordEncoder());
-        logger.info("WebSecurity认证方式配置完成");
-    }
+//    @Override
+//    protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
+//        auth.inMemoryAuthentication().withUser("user").password("123456").roles("USER");
+//        auth.userDetailsService(customerUserService).passwordEncoder(passwordEncoder());
+//        logger.info("WebSecurity认证方式配置完成");
+//    }
 
     /**
      * 密码加密方式

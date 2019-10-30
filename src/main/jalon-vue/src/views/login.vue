@@ -57,13 +57,6 @@
       };
     },
     methods: {
-      showPwd() {
-        if (this.pwdType === "password") {
-          this.pwdType = "";
-        } else {
-          this.pwdType = "password";
-        }
-      },
       handleLogin() {
         this.$refs.loginForm.validate(valid => {
           if (valid) {
@@ -72,18 +65,18 @@
               .dispatch("Login", this.loginForm)
               .then(response => {
                 this.loading = false;
-                let code = response.data.status;
-                if (code == 200) {
-                  this.$store.commit("SET_USERNAME", "username")
-                  this.$store.commit("SET_TOKEN", "token")
+                let data = response.data;
+                if (data.backCode == 200) {
+                  this.$store.commit("SET_USERNAME", data.username);
+                  this.$store.commit("SET_TOKEN", data.token);
                   this.$router.push({
                     path: "/success",
-                    query: {data: response.data.msg}
+                    query: {data: data.backMsg}
                   });
                 } else {
                   this.$router.push({
                     path: "/error",
-                    query: {message: response.data.msg}
+                    query: {message: data.backMsg}
                   });
                 }
               })

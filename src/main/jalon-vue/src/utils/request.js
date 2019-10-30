@@ -14,7 +14,7 @@ service.interceptors.request.use((config) => {
   config.url = root + config.url;
   // 每个请求拼接token
   const token = store.state.user.token;
-  token && (config.headers.common['token'] = token);
+  token && (config.headers.common['Authorization'] = token);
   return config;
 });
 export default service
