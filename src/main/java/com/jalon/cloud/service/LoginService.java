@@ -2,6 +2,7 @@ package com.jalon.cloud.service;
 
 import com.jalon.cloud.config.security.CustomerUserService;
 import com.jalon.cloud.dto.UserDTO;
+import com.jalon.cloud.util.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,10 +23,9 @@ public class LoginService {
     @Autowired
     private CustomerUserService customerUserService;
     @Autowired
-    @Qualifier("redisTemplate")
-    private RedisTemplate<String, Object> redisTemplate;
-    @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
+    private RedisUtil redisUtil;
 
     public ResponseEntity<UserDTO> login(UserDTO userDTO) {
         UserDTO dto = new UserDTO();
@@ -38,7 +38,7 @@ public class LoginService {
             final UserDetails userDetails = customerUserService.loadUserByUsername(userDTO.getUsername());
             // 持久化的redis
             String token = new BCryptPasswordEncoder().encode(userDetails.getUsername());
-            redisTemplate.opsForValue().set(token, userDetails.getUsername());
+            redisUtil.set(token,userDetails.getUsername());
             dto.setToken(token);
             dto.setUsername(userDetails.getUsername());
             dto.setBackCode("200");

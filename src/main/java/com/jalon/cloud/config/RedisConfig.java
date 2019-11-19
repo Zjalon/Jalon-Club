@@ -1,76 +1,43 @@
 package com.jalon.cloud.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.alibaba.fastjson.support.spring.FastJsonRedisSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.*;
-import org.springframework.util.StringUtils;
-import redis.clients.jedis.JedisPoolConfig;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
+@ConditionalOnClass(RedisOperations.class)
+@EnableConfigurationProperties(RedisProperties.class)
 public class RedisConfig {
 
-    @Value("${spring.redis.host}")
-    private String hostName;
-    @Value("${spring.redis.port}")
-    private int port;
-    @Value("${spring.redis.password}")
-    private String password;
-    @Value("${spring.redis.port}")
-    private int timeout;
-
-    @Value("${jedis.pool.max-active}")
-    private int maxActive;
-    @Value("${jedis.pool.max-idle}")
-    private int maxIdle;
-    @Value("${jedis.pool.max-wait-millis}")
-    private int maxWait;
-    @Value("${jedis.pool.test-on-borrow}")
-    private boolean testOnBorrow;
-    @Value("${jedis.pool.test-on-return}")
-    private boolean testOnReturn;
-
-
-    @Bean(name = "redisTemplate")
-    public RedisTemplate redisTemplate() {
-        RedisTemplate template = new RedisTemplate();
-        return getRedisTemplate(template);
-    }
-
-    @Bean(name = "stringRedisTemplate")
-    public StringRedisTemplate stringRedisTemplate() {
-        StringRedisTemplate template = new StringRedisTemplate();
-        return (StringRedisTemplate) getRedisTemplate(template);
-    }
-
-    private RedisTemplate getRedisTemplate(RedisTemplate template) {
-        template.setConnectionFactory(connectionFactory());
+    @Bean
+    @ConditionalOnMissingBean(name = "redisTemplate")
+    public RedisTemplate<Object, Object> redisTemplate(
+            RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<Object, Object> template = new RedisTemplate<>();
+        //使用fastjson序列化
+        FastJsonRedisSerializer fastJsonRedisSerializer = new FastJsonRedisSerializer(Object.class);
+        // value值的序列化采用fastJsonRedisSerializer
+        template.setValueSerializer(fastJsonRedisSerializer);
+        template.setHashValueSerializer(fastJsonRedisSerializer);
+        // key的序列化采用StringRedisSerializer
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setConnectionFactory(redisConnectionFactory);
         return template;
     }
 
-    private RedisConnectionFactory connectionFactory() {
-        JedisConnectionFactory jedis = new JedisConnectionFactory();
-        jedis.setHostName(hostName);
-        jedis.setPort(port);
-        if (!StringUtils.isEmpty(password)) {
-            jedis.setPassword(password);
-        }
-        jedis.setTimeout(timeout);
-        jedis.setPoolConfig(poolCofig());
-        // 初始化连接pool
-        jedis.afterPropertiesSet();
-        RedisConnectionFactory factory = jedis;
-        return factory;
-    }
-
-    private JedisPoolConfig poolCofig() {
-        JedisPoolConfig poolCofig = new JedisPoolConfig();
-        poolCofig.setMaxIdle(maxIdle);
-        poolCofig.setMaxWaitMillis(maxWait);
-        poolCofig.setTestOnBorrow(testOnBorrow);
-        poolCofig.setTestOnReturn(testOnReturn);
-        return poolCofig;
+    @Bean
+    @ConditionalOnMissingBean(StringRedisTemplate.class)
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        StringRedisTemplate template = new StringRedisTemplate();
+        template.setConnectionFactory(redisConnectionFactory);
+        return template;
     }
 }
